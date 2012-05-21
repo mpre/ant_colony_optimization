@@ -1,0 +1,4 @@
+ant.py contains the code
+clienti.csv contains clients positions
+magazzini.csv contains warehouse positions
+distanze.csv contains dinstances beetween clients and warehouses
