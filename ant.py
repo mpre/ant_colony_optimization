@@ -35,10 +35,16 @@ class ACOOpt(object):
         
         self.f = obj_reader("distanze.csv")
         
+        self.magazKeyPos = dict()
+        self.clientKeyPos = dict()
+
         for line in self.f.elements:
+            magazPos = int(line[0]) - 1
+            clientPos = int(line[1]) - 1
+            self.magazKeyPos[self.magaz.elements[magazPos][0]] = magazPos
+            self.clientKeyPos[self.client.elements[clientPos][0]] = clientPos
             line[0] = self.magaz.elements[int(line[0]) -1][0]
             line[1] = self.client.elements[int(line[1]) -1][0]
-            print line
             position = tuple([line[0], line[1]])
             self.dist[position] = int(line[2])
             if self.dist[position] > self.dmax:
@@ -64,9 +70,21 @@ class ACOOpt(object):
                     self.solBest = Pop[a]
             self.tau = self.updateTau(zPop, Pop)
             print "Iterazione ", iter_n, " -- valore : ", self.cost(self.solBest)
+        
+        magUse = dict()
+
         print "La soluzione trovata e' la seguente :"
+        
         for k in self.solBest.keys():
-            print "Cliente : ", k, " \t - Magazzino : ", self.solBest[k]
+            print "Cliente : ", k, " \t - Magazzino : ", self.solBest[k], "\t - Distanza : ", self.dist[(self.solBest[k], k)], "\t - Richiesta : ", self.client.elements[self.clientKeyPos[k]][1]
+            if self.solBest[k] in magUse.keys():
+                magUse[self.solBest[k]] = int(magUse[self.solBest[k]]) + int(self.client.elements[self.clientKeyPos[k]][1])
+            else:
+                magUse[self.solBest[k]] = int(self.client.elements[self.clientKeyPos[k]][1])
+        
+        for k in magUse.keys():
+            print "Magazzino : ", k, "\tUtilizzo : ", magUse[k], "/", self.magaz.elements[self.magazKeyPos[k]][1]
+            
         return
 
     def cost(self, pop):
@@ -149,6 +167,14 @@ class ACOOpt(object):
         return k
 
     def write(self):
+        fout = open("sol.csv", 'w')
+        fout.write("mag, cli\n")
+        for k in self.solBest.keys():
+            fout.write(str(self.magazKeyPos[self.solBest[k]] + 1))
+            fout.write(",")
+            fout.write(str(self.clientKeyPos[k] + 1))
+            fout.write("\n")
+        fout.close()
         return
 
     
@@ -156,3 +182,4 @@ class ACOOpt(object):
 acosea = ACOOpt()
 
 acosea.ant_search()
+acosea.write()
