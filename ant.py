@@ -1,6 +1,11 @@
+#!/usr/bin/env python
+# Previtali Marco
+# 704496
+
 import random
 
 class obj_reader(object):
+    """Lettore di file csv"""
 
     def __init__(self, filename):
         self.elements = []
@@ -12,13 +17,12 @@ class obj_reader(object):
         fin.close()
 
 class ACOOpt(object):
+    """Ant colony"""
 
     def __init__(self, n_ants=10, n_iter=100, alpha=0.5, rho=0.5):
         self.eta = dict()
         self.tau = dict()
-        self.solBest = dict() # self.solBest[i] = (magazzino_k)
-        
-        self.costi = dict()
+        self.solBest = dict() # self.solBest[i] = (magazzino_k) - contiene il magazzino soluzione per il cliente i
         
         self.dist = dict()
 
@@ -35,9 +39,10 @@ class ACOOpt(object):
         
         self.f = obj_reader("distanze.csv")
         
-        self.magazKeyPos = dict()
-        self.clientKeyPos = dict()
+        self.magazKeyPos = dict()  # mappatura ID -> posizione per i magazzini
+        self.clientKeyPos = dict() # mappatura ID -> posizione per i clienti
 
+        # Calcolo distante
         for line in self.f.elements:
             magazPos = int(line[0]) - 1
             clientPos = int(line[1]) - 1
@@ -62,7 +67,8 @@ class ACOOpt(object):
     def ant_search(self):
         zPop = dict() # costo suluzioni
         Pop = dict() # soluzioni dell'iterazione
-        
+
+        # Calcolo soluzioni
         for iter_n in range(self.n_iter):
             for a in range(self.n_ants):
                 zPop[a], Pop[a] = self.construct_sol(a)
@@ -71,6 +77,7 @@ class ACOOpt(object):
             self.tau = self.updateTau(zPop, Pop)
             print "Iterazione ", iter_n, " -- valore : ", self.cost(self.solBest)
         
+        # Calcolo e stampa di quanto i magazzini siano pieni (solo alla fine)
         magUse = dict()
 
         print "La soluzione trovata e' la seguente :"
@@ -88,15 +95,13 @@ class ACOOpt(object):
         return
 
     def cost(self, pop):
+        # Calcolo costo di una soluzione pop, se pop e' vuoto viene ritornato un valore "alto"
         if len(pop) == 0: 
             return 100000000;
-        #print "calcolo costo di "
-        #print pop
         co = 0
         for k in pop.keys():
             position = tuple([pop[k], k])
             co += self.dist[position]
-        #print "il costo e' ", co
         return co
 
     def construct_sol(self, a):
@@ -110,15 +115,9 @@ class ACOOpt(object):
             for m in self.magaz.elements:
                 if int(rc[m[0]]) > int(c[1]):
                     position = tuple([m[0], c[0]])
-                    #print "ETAAAAAAAAAAAAA"
-                    #print self.eta
-                    #print "TAAAAAAAUUUUUUUUUU"
-                    #print self.tau
                     val[m[0]] = self.alpha * self.eta[position] + (1-self.alpha) * self.tau[position]
                 else:
                     val[m[0]] = 0
-            #print "Per ", c[0], " i val sono "
-            #print val
             solutionMag[c[0]] = self.montecarlo(val)
             rc[solutionMag[c[0]]] = int(rc[solutionMag[c[0]]]) - int(c[1])
         return (self.cost(solutionMag), solutionMag)
@@ -136,12 +135,7 @@ class ACOOpt(object):
             if self.cost(Pop[a]) > zWorst:
                 zWorst = self.cost(Pop[a])
 
-        #print "ASFASFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-        print "ZWORST ", zWorst
-
-        #print Pop[3]
-        #print zPop[3]
-        #print self.cost(Pop[3])
+        print "ZWORST : ", zWorst
 
         for a in range(self.n_ants):
             for c in self.client.elements:
@@ -151,10 +145,7 @@ class ACOOpt(object):
     def montecarlo(self, val):
         # implementazione di selezione secondo montecarlo
         s = 0
-#        print "VAL : " 
-#        print val
         for i in val.keys():
-#            print "chiave " + i
             s += val[i]
         r = s * random.random()
         s = 0
@@ -175,6 +166,7 @@ class ACOOpt(object):
             fout.write(str(self.clientKeyPos[k] + 1))
             fout.write("\n")
         fout.close()
+        print "Risultati scritti in sol.csv"
         return
 
     
